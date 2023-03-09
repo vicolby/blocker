@@ -7,6 +7,18 @@ message Block {
     repeated Transaction transactions = 2;
 }
 
+message TxInput {
+    bytes prevTxHash = 1;
+    uint32 prevOutIndex = 2;
+    bytes publicKey = 3;
+    bytes signature = 4;
+}
+
+message TxOutput {
+    int64 amount = 1;
+    bytes address = 2;
+}
+
 message Header {
     int32 version = 1;
     int32 height = 2;
@@ -16,6 +28,8 @@ message Header {
 }
 
 message Transaction {
-
+    int32 version = 1;
+    repeated TxInput inputs = 2;
+    repeated TxOutput outputs = 3;    
 }
 
