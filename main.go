@@ -2,10 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"net"
-	"time"
 
 	"github.com/vicolby/blocker/node"
 	"github.com/vicolby/blocker/proto"
@@ -13,27 +10,28 @@ import (
 )
 
 func main() {
-	node := node.NewNode()
+	makeNode("localhost:8080", []string{})
+	makeNode("localhost:8081", []string{"localhost:8080"})
 
-	opts := []grpc.ServerOption{}
-	grpcServer := grpc.NewServer(opts...)
-	ln, err := net.Listen("tcp", ":8080")
+	// go func() {
+	// 	for {
+	// 		time.Sleep(2 * time.Second)
+	// 		makeTransaction()
+	// 	}
+	// }()
 
-	if err != nil {
-		log.Fatal(err)
+	select {}
+}
 
-	}
-	proto.RegisterNodeServer(grpcServer, node)
-	fmt.Println("Node is running on port 8080")
-
-	go func() {
-		for {
-			time.Sleep(2 * time.Second)
-			makeTransaction()
+func makeNode(listenAddr string, bootstrapNodes []string) *node.Node {
+	n := node.NewNode()
+	go n.Start(listenAddr)
+	if len(bootstrapNodes) > 0 {
+		if err := n.BootstrapNetwork(bootstrapNodes); err != nil {
+			log.Fatal(err)
 		}
-	}()
-
-	grpcServer.Serve(ln)
+	}
+	return n
 }
 
 func makeTransaction() {
@@ -41,12 +39,12 @@ func makeTransaction() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Close()
 
 	c := proto.NewNodeClient(client)
-
 	tx := &proto.Version{
-		Version: "1.0.0",
+		Version:    "1.0.0",
+		Height:     100,
+		ListenAddr: "localhost:4000",
 	}
 
 	_, err = c.Handshake(context.TODO(), tx)
